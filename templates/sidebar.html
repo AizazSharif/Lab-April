@@ -21,24 +21,53 @@
 <body>
     <!-- Header-->
     {% include 'header.html' %}
-
+    
     <div class="container-fluid">
         <div class="row">    
             <div id="admin-sidebar" class="col-md-2 p-x-0 p-y-3">
                 <ul class="sidenav admin-sidenav list-unstyled">
-                    <li><a id="deviceinfo" href="#">Device Inforation</a></li>      <!-- Device Inforation -->
+                    <li><a id="deviceinfo" href="#">Device Information</a></li>      <!-- Device Inforation -->
                     <li><a id="syncaccounts" href="#">Synced Accounts</a></li>      <!-- Synced Accounts -->
                     <li><a id="makeImage" href="#">Make Image</a></li>      <!-- Make image -->
                     <li><a id="mountImage" href="#">Mount Image</a></li>    <!-- Mount image -->
                     <li><a id="contacts" href="#">Contacts</a></li>         <!-- Contacts -->
                     <li><a id="sms" href="#">SMS</a></li>                   <!-- SMS-->
                     <li><a id="call-logs" href="#">Call Logs</a></li>       <!-- Call Logs-->
-                    <li><a id="facebookprofile" href="#">Facebook Profile</a></li>       <!-- Facebook Profile-->
-                    <li><a id="facebookcontacts" href="#">Facebook Contacts</a></li>       <!-- Facebook Contacts-->
-                    <li><a id="whatsappcontacts" href="#">Whatsapp Contacts</a></li>       <!-- Whatsapp Contacts-->
-                    <li><a id="whatsappmessages" href="#">Whatsapp Messages</a></li>       <!-- Whatsapp Messages-->
-                    <li><a id="whatsappgroups" href="#">Whatsapp Groups</a></li>       <!-- Whatsapp Groups-->
 
+                    <!-- Facebook dropdown start -->
+                    <li>
+                        <!-- Main facebook button -->
+                        <a class="accordion-toggle collapsed toggle-switch" data-toggle="collapse" href="#facebook">
+                            <span class="sidebar-icon"></span>
+                            <span class="sidebar-title">Facebook</span>
+                            <b class="caret"></b>
+                        </a>
+                        <!-- Sub-menu -->
+                        <ul id="facebook" class="panel-collapse collapse panel-switch" role="menu">
+                            <!-- Sub-buttons -->
+                            <li><a id="facebookprofile" href="#"><i class="fa fa-caret-right"></i>Profile</a></li>      <!-- Facebook profile-->
+                            <li><a id="facebookcontacts" href="#"><i class="fa fa-caret-right"></i>Contacts</a></li>    <!-- Facebook contacts-->
+                        </ul>
+                    </li>
+                    <!-- Facebook dropdown end  -->
+
+                    <!-- Whatsapp dropdown start -->
+                    <li>
+                        <!-- Main whatsapp button -->
+                        <a class="accordion-toggle collapsed toggle-switch" data-toggle="collapse" href="#whatsapp">
+                            <span class="sidebar-icon"></span>
+                            <span class="sidebar-title">Whatsapp</span>
+                            <b class="caret"></b>
+                        </a>
+                        <!-- Sub-menu -->
+                        <ul id="whatsapp" class="panel-collapse collapse panel-switch" role="menu">
+                            <!-- Sub-buttons -->
+                            <li><a id="whatsappcontacts" href="#"><i class="fa fa-caret-right"></i>Contacts</a></li>    <!-- Whatsapp contacts-->
+                            <li><a id="whatsappmessages" href="#"><i class="fa fa-caret-right"></i>Messages</a></li>    <!-- Whatsapp messages-->
+                            <li><a id="whatsappgroups" href="#"><i class="fa fa-caret-right"></i>Groups</a></li>        <!-- Whatsapp groups-->
+                        </ul>
+                    </li>
+                    <!-- Facebook dropdown end  -->
 
                     <!-- Locations dropdown start -->
                     <li>
@@ -56,6 +85,12 @@
                         </ul>
                     </li>
                     <!-- Locations dropdown end  -->
+
+                    <li><a id="audio" href="#">Audio Files</a></li>       <!-- Audio Files -->
+                    <li><a id="video" href="#">Video Files</a></li>       <!-- Video Files -->
+                    <li><a id="documents" href="#">Documents</a></li>       <!-- Documents -->
+                    <li><a id="pictures" href="#">Pictures</a></li>       <!-- Pictures -->
+
                 </ul>
             </div> <!-- /#admin-sidebar end -->
             <!-- Div for spacing -->
@@ -66,6 +101,13 @@
 
                 <!-- Progress bar end -->
                 <div id="contactsTable"></div>      <!-- This gets replaced with data from javascript -->
+                <table class="table table-striped table-bordered table-hover table-condensed" id="table_div">
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                        </tr>
+                    </thead>
+                </table>
             </div> <!-- /#admin-main-control -->
         </div> <!-- /.row -->
     </div> <!-- /.container-fluid -->

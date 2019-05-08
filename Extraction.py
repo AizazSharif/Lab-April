@@ -20,6 +20,11 @@ from flask_socketio import SocketIO, emit
 import yaml
 import re
 import getpass
+import allAudSearch as ad
+import allVidSearch as vd
+import allDocSearch as ds
+import allPicSearch as ps
+import urllib
 
 # Contacts table
 class ContactsTable(Table):
@@ -94,8 +99,11 @@ class SyncAccountsTable(Table):
 class DeviceInfoTable(Table):
     classes = ['table', 'table-striped', 'table-bordered', 'table-hover', 'table-condensed']
     deviceInfo = Col('Device Information')
-    
 
+# Audio Files Table
+class AudioFiles(Table):
+    classes = ['table', 'table-striped', 'table-bordered', 'table-hover', 'table-condensed']
+    audioFiles = Col('Files')
 
 
 app = Flask(__name__)
@@ -133,7 +141,7 @@ def cleanFirefox():
     '''
     command = 'rm -r ~/.cache/mozilla/firefox/*.default/*' 
     print (command)
-    executeCommand("aizaz", command)
+    executeCommand('asim', command)
 
 
 @app.route('/getPassword', methods=['POST'])
@@ -217,10 +225,13 @@ def mountDeviceImage():
 def mountImage(password):
     '''Function to mount image file'''
     path = os.getcwd()
-    mountCommand = "mount -o loop \"" + path + '/android.img\" /mnt/android'
+    mountPath = path + "/static/mounted/"
+    if not os.path.isdir(mountPath):
+        os.mkdir(mountPath)
+    mountCommand = "mount -o loop \"" + path + '/android.img\" \"' + mountPath + '\"'
     # if mnt already exists
-    unmountCmd = 'umount /mnt/android'
-    if os.path.isdir('/mnt/android'):
+    unmountCmd = 'umount \"' + mountPath + '\"'
+    if os.path.isdir(mountPath):
         # Unmount image
         try:
             subprocess.call('echo {} | sudo -S {}'.format(password, unmountCmd), shell=True)
@@ -257,7 +268,7 @@ def takeOwnership(filename):
 @app.route('/getContacts', methods=['GET'])
 def readContacts():
     '''Function to read contacts'''
-    findCommand = "find /mnt/android -name contacts2.db"
+    findCommand = "find ./static/mounted -name contacts2.db"
     contactsPath = subprocess.check_output('echo {} | sudo -S {}'.format(password,findCommand), shell=True)
     contactsPath = (contactsPath.decode('utf-8')).split('\n')
     contactsPath = contactsPath[0]
@@ -302,17 +313,17 @@ def readContacts():
 
     filterList = []
     # Convert contacts list to JSON
-    print (contactsList)
+    # print (contactsList)
     # return jsonify({'contacts':contactsList})
     table = ContactsTable(contactsList)
-    print (table)
+    # print (table)
     # return render_template('contacts.html',contactsList=table)
     return jsonify(table)
         
 @app.route('/getSMS', methods=['GET'])
 def readSMS():
     '''Function to read SMS (For Android 5.0'''
-    findCommand = "find /mnt/android -name mmssms.db"
+    findCommand = "find ./static/mounted -name mmssms.db"
     # smsPath = subprocess.check_output('echo {} | sudo -S {}'.format(password,findCommand), shell=True)
     smsPath = executeCommand(password, findCommand)
     # Copy file
@@ -353,7 +364,7 @@ def readSMS():
 @app.route('/getLogs', methods=['GET'])
 def getCallLogs():
     '''Get call logs'''
-    findCmd = 'find /mnt/android -name calllog.db'
+    findCmd = 'find ./static/mounted -name calllog.db'
     logsPath = executeCommand(password,findCmd)
     copyCommand = 'cp ' + logsPath + ' \"' + os.getcwd() + '\"'
     executeCommand(password, copyCommand)
@@ -368,7 +379,7 @@ def getCallLogs():
     # Get table data
     messages = db.Table('calls', metadata, autoload=True, autoload_with=engine)
     select_stmt = select([messages.c.name, messages.c.number, messages.c.date, messages.c.duration])
-    '''
+    
     # Execute query
     result = connection.execute(select_stmt)
     finalResult = result.fetchall()
@@ -381,12 +392,12 @@ def getCallLogs():
     table = CallLogsTable(callLogsList)
     return jsonify(table)
     # return jsonify({'calllogs':callLogsList})     # Return JSON
-    '''
-    return "yes"
+    
+
 @app.route('/getWhatsappLocations', methods=['GET'])
 def getCallLocations():
     '''Get whatsapp locations'''
-    findCmd = 'find /mnt/android -name msgstore.db'
+    findCmd = 'find ./static/mounted -name msgstore.db'
     locationsPath = executeCommand(password,findCmd)
     copyCommand = 'cp ' + locationsPath + ' \"' + os.getcwd() + '\"'
     executeCommand(password, copyCommand)
@@ -423,7 +434,7 @@ def getCallLocations():
 @app.route('/getLocations', methods=['GET'])
 def getLocations():
     '''Get locations'''
-    findCmd = 'find /mnt/android -name gmm_sync.db'
+    findCmd = 'find ./static/mounted -name gmm_sync.db'
     locationsPath = executeCommand(password,findCmd)
     copyCommand = 'cp ' + locationsPath + ' \"' + os.getcwd() + '\"'
     executeCommand(password, copyCommand)
@@ -473,7 +484,7 @@ def index():
 
 @app.route('/getFacebookUserName', methods=['GET'])
 def getFacebookUserName():
-    findCmd = 'find /mnt/android -name app_gatekeepers'
+    findCmd = 'find ./static/mounted -name app_gatekeepers'
     locationsPath = executeCommand(password,findCmd)
     copyCommand = 'cp -r ' + locationsPath +     ' \"' + os.getcwd() + '\"'
     executeCommand(password, copyCommand)
@@ -481,10 +492,11 @@ def getFacebookUserName():
     y = os.getcwd()
     print (y,"****************")
     
-    copyCommand = 'chown aizazsharif:aizazsharif ' + os.getcwd() + '/app_gatekeepers/users/'  +  ' \"' + os.getcwd() + '\"'
-    executeCommand(password, copyCommand)
+    # copyCommand = 'chown aizazsharif:aizazsharif ' + os.getcwd() + '/app_gatekeepers/users/'  +  ' \"' + os.getcwd() + '\"'
+    # executeCommand(password, copyCommand)
+    takeOwnership('/app_gatekeepers/users/')
     
-    copyCommand = 'ls '+ os.getcwd()+'/app_gatekeepers/users/'
+    copyCommand = 'ls ' + os.getcwd() + '/app_gatekeepers/users/'
     x=executeCommand(password, copyCommand)
 
     print (x)
@@ -496,7 +508,7 @@ def getFacebookUserName():
 
 @app.route('/getFacebookContacts', methods=['GET'])
 def getFacebookContacts():
-    findCmd = 'find /mnt/android -name contacts_db2'
+    findCmd = 'find ./static/mounted -name contacts_db2'
     locationsPath = executeCommand(password,findCmd)
     print (locationsPath,"***********")
 
@@ -504,8 +516,9 @@ def getFacebookContacts():
     copyCommand = 'cp ' + locationsPath + ' \"' + os.getcwd() + '\"'
     executeCommand(password, copyCommand)
 
-    chownCommand = 'chown aizazsharif:aizazsharif contacts_db2'  +  ' \"' + os.getcwd() + '\"'
-    executeCommand(password, chownCommand)
+    # chownCommand = 'chown aizazsharif:aizazsharif contacts_db2'  +  ' \"' + os.getcwd() + '\"'
+    # executeCommand(password, chownCommand)
+    takeOwnership('contacts_db2')
     
     
     # Connect to database
@@ -539,7 +552,7 @@ def getFacebookContacts():
 
 @app.route('/getWhatsappContacts', methods=['GET'])
 def getWhatsappContacts():
-    findCmd = 'find /mnt/android -name wa.db'
+    findCmd = 'find ./static/mounted -name wa.db'
     locationsPath = executeCommand(password,findCmd)
     print (locationsPath,"***********")
 
@@ -547,9 +560,11 @@ def getWhatsappContacts():
     copyCommand = 'cp ' + locationsPath + ' \"' + os.getcwd() + '\"'
     executeCommand(password, copyCommand)
 
-    chownCommand = 'chown aizazsharif:aizazsharif wa.db'  +  ' \"' + os.getcwd() + '\"'
-    executeCommand(password, chownCommand)
+    # chownCommand = 'chown aizazsharif:aizazsharif wa.db'  +  ' \"' + os.getcwd() + '\"'
+    # executeCommand(password, chownCommand)
     
+    takeOwnership('wa.db')
+
     # Get table data
     db = sqlalchemy.create_engine('sqlite:///wa.db')
     
@@ -579,7 +594,7 @@ def getWhatsappContacts():
 @app.route('/getWhatsappMessages', methods=['GET'])
 def getWhatsappMessages():
  
-    findCmd = 'find /mnt/android -name msgstore.db'
+    findCmd = 'find ./static/mounted -name msgstore.db'
     locationsPath = executeCommand(password,findCmd)
     print (locationsPath,"***********")
 
@@ -587,9 +602,10 @@ def getWhatsappMessages():
     copyCommand = 'cp ' + locationsPath + ' \"' + os.getcwd() + '\"'
     executeCommand(password, copyCommand)
 
-    chownCommand = 'chown aizazsharif:aizazsharif msgstore.db'  +  ' \"' + os.getcwd() + '\"'
-    executeCommand(password, chownCommand)
+    # chownCommand = 'chown aizazsharif:aizazsharif msgstore.db'  +  ' \"' + os.getcwd() + '\"'
+    # executeCommand(password, chownCommand)
     
+    takeOwnership('msgstore.db')
     
     # Connect to database
     engine = create_engine('sqlite:///msgstore.db')   
@@ -629,7 +645,7 @@ def getWhatsappMessages():
      
 @app.route('/getWhatsappGroups', methods=['GET'])
 def getWhatsappGroups():
-    findCmd = 'find /mnt/android -name msgstore.db'
+    findCmd = 'find ./static/mounted -name msgstore.db'
     locationsPath = executeCommand(password,findCmd)
     print (locationsPath,"***********")
 
@@ -637,9 +653,11 @@ def getWhatsappGroups():
     copyCommand = 'cp ' + locationsPath + ' \"' + os.getcwd() + '\"'
     executeCommand(password, copyCommand)
 
-    chownCommand = 'chown aizazsharif:aizazsharif msgstore.db'  +  ' \"' + os.getcwd() + '\"'
-    executeCommand(password, chownCommand)
+    # chownCommand = 'chown aizazsharif:aizazsharif msgstore.db'  +  ' \"' + os.getcwd() + '\"'
+    # executeCommand(password, chownCommand)
     
+    takeOwnership('msgstore.db')
+
     # Get table data
     db = sqlalchemy.create_engine('sqlite:///msgstore.db')
     sql_cmd = sqlalchemy.text('''SELECT chat_list.key_remote_jid, chat_list.subject, chat_list.creation, messages_quotes.data
@@ -696,6 +714,7 @@ def getSyncedAccounts():
     print (len(ACCOUNTS))    
     return (jsonify(ACCOUNTS))
     '''
+
 @app.route('/getDeviceInfo', methods=['GET'])
 def getDeviceInfo():   
     device=[]
@@ -759,9 +778,11 @@ def getDeviceInfo():
     
 
     # IMEI
-    IMEI = co(['adb', 'shell', 'service', 'call','iphonesubinfo','16',
-    '|','busybox','awk','-F','\"\'\"','\'{print $2}\'','|','busybox','sed'
-        ,'\'s/[^0-9A-F]*//g\'','|','busybox','tr','-d','\'\n\'','&&','echo']).decode('UTF-8')
+    cmd = "adb shell service call iphonesubinfo 1 | awk -F \"'\" '{print $2}' | sed '1 d' | tr -d '.' | awk '{print}' ORS="
+    IMEI = (co(cmd, shell=True)).decode('utf-8')
+    # IMEI = co(['adb', 'shell', 'service', 'call','iphonesubinfo','16',
+    # '|','busybox','awk','-F','\"\'\"','\'{print $2}\'','|','busybox','sed'
+    #     ,'\'s/[^0-9A-F]*//g\'','|','busybox','tr','-d','\'\n\'','&&','echo']).decode('UTF-8')
     IMEI=IMEI.strip("\r\n")
     try:
         print(" IMEI: " + IMEI)
@@ -781,11 +802,78 @@ def getDeviceInfo():
 
     #return (jsonify({'device':device}))
 
+@app.route('/getAudioFiles', methods=['GET'])
+def audioSearch():
+    '''Return list of audio files'''
+    # audioList = []  # This will have all the files
+    audioFileList = ad.getFiles('./static/mounted')    # Call the function to get files
+    
+    # Iterate over the list of files to convert them to table format
+    # for x in audioFileList:
+    #     tempFile = dict(audioFiles=x)    # Add to dictionary
+    #     audioList.append(tempFile)          # Add dictionary to list
+
+    # table = AudioFiles(audioList)           # Cast to table
+    # return jsonify(table)                   # Return table
+    # print(audioFileList)
+    return jsonify(audioFileList)
+
+@app.route('/getVideoFiles', methods=['GET'])
+def videoSearch():
+    '''Return list of video files'''
+    # videoList = []  # This will have all the files
+    videoFileList = vd.getFiles('./static/mounted')    # Call the function to get files
+    
+    # Iterate over the list of files to convert them to table format
+    # for x in videoFileList:
+    #     tempFile = dict(videoFiles=x)    # Add to dictionary
+    #     videoList.append(tempFile)          # Add dictionary to list
+
+    # table = videoFiles(videoList)           # Cast to table
+    # return jsonify(table)                   # Return table
+    # print(videoFileList)
+    return jsonify(videoFileList)
+
+
+@app.route('/getDocuments', methods=['GET'])
+def docSearch():
+    '''Return list of documents'''
+    # docList = []  # This will have all the files
+    docFileList = ds.getFiles('./static/mounted')    # Call the function to get files
+    
+    # Iterate over the list of files to convert them to table format
+    # for x in docFileList:
+    #     tempFile = dict(docFiles=x)    # Add to dictionary
+    #     docList.append(tempFile)          # Add dictionary to list
+
+    # table = DocFiles(docList)           # Cast to table
+    # return jsonify(table)                   # Return table
+    # print(docFileList)
+    return jsonify(docFileList)
+
+@app.route('/getPictures', methods=['GET'])
+def picSearch():
+    '''Return list of pictures'''
+    # picList = []  # This will have all the files
+    picFileList = ps.getFiles('./static/mounted')    # Call the function to get files
+    
+    # Iterate over the list of files to convert them to table format
+    # for x in picFileList:
+    #     tempFile = dict(picFiles=x)    # Add to dictionary
+    #     picList.append(tempFile)          # Add dictionary to list
+
+    # table = picFiles(picList)           # Cast to table
+    # return jsonify(table)                   # Return table
+    # print(picFileList)
+    return jsonify(picFileList)
 
 
     
 def main():
-    cleanFirefox()
+    try:
+        cleanFirefox()
+    except Exception as e:
+        print(e)
     socketio.run(app)
 
 
