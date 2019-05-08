@@ -322,7 +322,7 @@ def readContacts():
         
 @app.route('/getSMS', methods=['GET'])
 def readSMS():
-    '''Function to read SMS (For Android 5.0'''
+    '''Function to read SMS (For Android 5.0)'''
     findCommand = "find ./static/mounted -name mmssms.db"
     # smsPath = subprocess.check_output('echo {} | sudo -S {}'.format(password,findCommand), shell=True)
     smsPath = executeCommand(password, findCommand)
@@ -340,8 +340,8 @@ def readSMS():
     metadata = db.MetaData()
     
     # Get table data
-    messages = db.Table('messages', metadata, autoload=True, autoload_with=engine)
-    select_stmt = select([messages.c.address, messages.c.content, messages.c.date, messages.c.date_sent],
+    messages = db.Table('sms', metadata, autoload=True, autoload_with=engine)
+    select_stmt = select([messages.c.address, messages.c.body, messages.c.date, messages.c.date_sent],
     group_by=[messages.c.address],
     order_by=[messages.c.address])
     # Execute query
@@ -492,9 +492,9 @@ def getFacebookUserName():
     y = os.getcwd()
     print (y,"****************")
     
-    # copyCommand = 'chown aizazsharif:aizazsharif ' + os.getcwd() + '/app_gatekeepers/users/'  +  ' \"' + os.getcwd() + '\"'
-    # executeCommand(password, copyCommand)
-    takeOwnership('/app_gatekeepers/users/')
+    copyCommand = 'chown aizazsharif:aizazsharif ' + os.getcwd() + '/app_gatekeepers/users/'  +  ' \"' + os.getcwd() + '\"'
+    executeCommand(password, copyCommand)
+    #takeOwnership('/app_gatekeepers/users/')
     
     copyCommand = 'ls ' + os.getcwd() + '/app_gatekeepers/users/'
     x=executeCommand(password, copyCommand)
@@ -778,11 +778,11 @@ def getDeviceInfo():
     
 
     # IMEI
-    cmd = "adb shell service call iphonesubinfo 1 | awk -F \"'\" '{print $2}' | sed '1 d' | tr -d '.' | awk '{print}' ORS="
-    IMEI = (co(cmd, shell=True)).decode('utf-8')
-    # IMEI = co(['adb', 'shell', 'service', 'call','iphonesubinfo','16',
-    # '|','busybox','awk','-F','\"\'\"','\'{print $2}\'','|','busybox','sed'
-    #     ,'\'s/[^0-9A-F]*//g\'','|','busybox','tr','-d','\'\n\'','&&','echo']).decode('UTF-8')
+    #cmd = "adb shell service call iphonesubinfo 1 | awk -F \"'\" '{print $2}' | sed '1 d' | tr -d '.' | awk '{print}' ORS="
+    #IMEI = (co(cmd, shell=True)).decode('utf-8')
+    IMEI = co(['adb', 'shell', 'service', 'call','iphonesubinfo','16',
+     '|','busybox','awk','-F','\"\'\"','\'{print $2}\'','|','busybox','sed'
+         ,'\'s/[^0-9A-F]*//g\'','|','busybox','tr','-d','\'\n\'','&&','echo']).decode('UTF-8')
     IMEI=IMEI.strip("\r\n")
     try:
         print(" IMEI: " + IMEI)
